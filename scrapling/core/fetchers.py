@@ -31,7 +31,8 @@ class HttpxFetcher(BaseFetcher):
     def __init__(
         self,
         *,
-        timeout: float = 30.0,
+        # Increased default timeout from 30s to 60s to better handle slow sites
+        timeout: float = 60.0,
         follow_redirects: bool = True,
         verify_ssl: bool = True,
         proxy: Optional[str] = None,
@@ -94,82 +95,3 @@ class HttpxFetcher(BaseFetcher):
                 method.upper(),
                 url,
                 data=data,
-                json=json,
-            )
-            response.raise_for_status()
-            return response
-
-
-class PlaywrightFetcher(BaseFetcher):
-    """A JavaScript-capable fetcher backed by Playwright.
-
-    Uses a headless Chromium browser to render pages, making it suitable
-    for SPAs and pages that rely heavily on client-side JavaScript.
-
-    Playwright must be installed separately::
-
-        pip install playwright && playwright install chromium
-
-    Example::
-
-        fetcher = PlaywrightFetcher(headless=True)
-        html = fetcher.fetch("https://example.com")
-    """
-
-    def __init__(
-        self,
-        *,
-        headless: bool = True,
-        wait_until: str = "domcontentloaded",
-        timeout: float = 30_000,  # milliseconds, Playwright convention
-        proxy: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.headless = headless
-        self.wait_until = wait_until
-        self.timeout = timeout
-        self.proxy = proxy
-
-    def fetch(self, url: str, **kwargs: Any) -> str:  # type: ignore[override]
-        """Navigate to *url* and return the fully-rendered HTML source.
-
-        Args:
-            url: Target URL.
-            **kwargs: Forwarded to ``page.goto``.
-
-        Returns:
-            The page's outer HTML as a string.
-
-        Raises:
-            ImportError: When the ``playwright`` package is not installed.
-            playwright.sync_api.Error: On navigation or browser errors.
-        """
-        try:
-            from playwright.sync_api import sync_playwright  # noqa: PLC0415
-        except ImportError as exc:
-            raise ImportError(
-                "Playwright is required for PlaywrightFetcher. "
-                "Install it with: pip install playwright && playwright install chromium"
-            ) from exc
-
-        launch_opts: Dict[str, Any] = {"headless": self.headless}
-        if self.proxy:
-            launch_opts["proxy"] = {"server": self.proxy}
-
-        logger.debug("PlaywrightFetcher GET %s (headless=%s)", url, self.headless)
-        with sync_playwright() as pw:
-            browser = pw.chromium.launch(**launch_opts)
-            context = browser.new_context(
-                extra_http_headers=self._build_headers(),
-            )
-            page = context.new_page()
-            page.goto(
-                url,
-                wait_until=self.wait_until,
-                timeout=self.timeout,
-                **kwargs,
-            )
-            html = page.content()
-            browser.close()
-        return html
