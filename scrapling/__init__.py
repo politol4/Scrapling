@@ -11,6 +11,10 @@ Basic usage:
 
 Also expose StealthyFetcher at the top level for convenience since I use
 it frequently in my scraping projects.
+
+Personal fork notes:
+    - Added auto_match default set to False (I prefer explicit selectors)
+    - Exposed Adaptator directly since I use it often for offline HTML parsing
 """
 
 __version__ = "0.2.0"
@@ -19,6 +23,10 @@ __license__ = "MIT"
 
 from scrapling.core.page import Adaptator
 from scrapling.fetchers import Fetcher, AsyncFetcher, PlayWrightFetcher, StealthyFetcher
+
+# Personal preference: default auto_match to False so selectors don't silently
+# fall back to fuzzy matching, which can mask broken selectors during development.
+Fetcher.auto_match = False
 
 __all__ = [
     "Adaptator",
