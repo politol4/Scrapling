@@ -15,9 +15,12 @@ it frequently in my scraping projects.
 Personal fork notes:
     - Added auto_match default set to False (I prefer explicit selectors)
     - Exposed Adaptator directly since I use it often for offline HTML parsing
+    - Added version tuple for easier programmatic version checks
 """
 
 __version__ = "0.2.0"
+# Tuple form is handy for version comparisons: if __version_info__ >= (0, 2, 0): ...
+__version_info__ = tuple(int(x) for x in __version__.split("."))
 __author__ = "D4Vinci"
 __license__ = "MIT"
 
@@ -35,4 +38,5 @@ __all__ = [
     "PlayWrightFetcher",
     "StealthyFetcher",
     "__version__",
+    "__version_info__",
 ]
